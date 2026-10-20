@@ -63,3 +63,45 @@ def test_library_init_ID_not_register(lib_init):
 
     with pytest.raises(ValueError,match='User not found'):
         lib.borrow_book('ID0003','ISBN001')
+
+@pytest.mark.system
+def test_system_full_cycle_borrow_return():
+  
+    lib = library.Library()
+    
+
+    book_1984 = book.Book('1984', 'George Orwell', 1949, 'ISBN001')
+    user_1 = user.User('Juan', 'ID0001')
+    
+    lib.add_book(book_1984)
+    lib.add_user(user_1)
+    
+
+    lib.borrow_book('ID0001', 'ISBN001')
+    assert lib.books[0].borrowed == True
+    lib.return_book('ID0001', 'ISBN001') 
+    
+
+    assert lib.books[0].borrowed == False
+
+@pytest.mark.system
+def test_system_borrow_rejected_for_borrowed_book():
+
+    lib = library.Library()
+    
+
+    book_moby = book.Book('Moby Dick', 'Herman Melville', 1851, 'ISBN004')
+    user_1 = user.User('Ana', 'ID0001')
+    user_2 = user.User('Luis', 'ID0002')
+    
+    lib.add_book(book_moby)
+    lib.add_user(user_1)
+    lib.add_user(user_2)
+    
+
+    lib.borrow_book('ID0001', 'ISBN004')
+    assert lib.books[0].borrowed == True
+    
+
+    with pytest.raises(ValueError, match="The book is already borrowed"):
+        lib.borrow_book('ID0002', 'ISBN004')
