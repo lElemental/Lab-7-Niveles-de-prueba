@@ -1,0 +1,39 @@
+================================================
+ACORDEÓN DE COMANDOS - EXAMEN DE TESTING (PYTEST)
+================================================
+
+Busca el tema en el que caiga la ruleta y copia el comando exacto en tu terminal:
+
+1. monkeypatch.setattr()
+   Comando: pytest -k setattr
+
+2. monkeypatch.delattr()
+   Comando: pytest -k delattr
+
+3. monkeypatch.setitem()
+   Comando: pytest -k setitem
+
+4. pytest.ini
+   Comando: pytest -m unit
+
+5. Marcadores de pytest
+   Comando: pytest -m system
+
+6. Parametrize
+   Comando: pytest -k parametrize
+
+7. Fixtures
+   Comando: pytest -k fixture
+
+8. Cobertura de caja blanca
+   Comando: pytest --cov=library --cov-report term-missing
+
+9. pytest.raises()
+   Comando: pytest -k raises
+
+10. try-except
+   Comando: pytest -k try_except
+
+11. capsys
+   Comando: pytest -k capsys
+

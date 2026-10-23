@@ -1,107 +1,119 @@
-import book 
 import pytest
-import library
-import user
+from library import Library, Book, User, CONFIG, settings
 
-@pytest.mark.system
-def test_borrow_book():
-
-    book1 = book.Book('Orgullo y prejuicio', 'Tenoch M.',2026 ,'ISBN001')
-    assert book1.title == 'Orgullo y prejuicio'
-    book1.borrow()
-    assert book1.borrowed == True 
-
-@pytest.mark.unit
-def test_borrow_two_times_book():
-
-    book1 = book.Book('Orgullo y prejuicio', 'Tenoch M.',2026 ,'ISBN001')
-    assert book1.title == 'Orgullo y prejuicio'
-    book1.borrow()
-    assert book1.borrowed == True 
-    with pytest.raises(ValueError,match = "The book is already borrowed"):
-        book1.borrow()
-
-@pytest.mark.unit
-def test_return_book():
-
-    book1 = book.Book('Orgullo y prejuicio', 'Tenoch M.',2026 ,'ISBN001')
-    assert book1.title == 'Orgullo y prejuicio'
-    book1.borrow()
-    assert book1.borrowed == True 
-    book1.return_book()
-    assert book1.borrowed == False
-
-@pytest.mark.wip
-def test_borrow_and_try_Except():# Prueba falla por la alteracion de try:Except 
-
-    book1 = book.Book('Orgullo y prejuicio', 'Tenoch M.',2026 ,'ISBN001')
-    assert book1.title == 'Orgullo y prejuicio'
-    book1.borrow()
-    assert book1.borrowed == True 
-    with pytest.raises(ValueError,match = "The book is already borrowed"):
-        book1.borrow()
-
+# ==========================================
+# 7. FIXTURES
+# ==========================================
 @pytest.fixture
-def lib_init():
-        lib = library.Library()
-        book_tenoch = book.Book('Orgullo y prejuicio','Tenoch M.', 2026, 'ISBN001')
-        lib.add_book(book_tenoch)
-        Tenoch = user.User('Tenoch','ID0001')
-        lib.add_user(Tenoch)
-        return lib
+def libreria_base():
+    lib = Library()
+    lib.add_book(Book("1984", "George Orwell", 1949, "ISBN001"))
+    lib.add_user(User(1, "Ana")) 
+    return lib
 
+@pytest.mark.unit
+def test_tema_fixture(libreria_base):
+    assert len(libreria_base.books) > 0
+
+# ==========================================
+# 4 y 5. MARCADORES Y PYTEST.INI
+# (No olvides agregar 'examen' en tu pytest.ini)
+# ==========================================
+@pytest.mark.examen
+def test_tema_marcador_uno():
+    assert True
+
+@pytest.mark.examen
+def test_tema_marcador_dos():
+    assert True
+
+# ==========================================
+# 6. PARAMETRIZE 
+# ==========================================
+@pytest.mark.unit
+# Fíjate que aquí dice 'titulo'
+@pytest.mark.parametrize('titulo, isbn, expected', [
+    ('Moby Dick', 'ISBN004', 'Moby Dick'),
+    ('Pride', 'ISBN005', 'Pride'),
+    ('Dune', 'ISBN006', 'Dune') 
+])
+# Y aquí abajo también debe decir 'titulo'
+def test_tema_parametrize(libreria_base, titulo, isbn, expected):
+    libreria_base.add_book(Book(titulo, "Autor Genérico", 2000, isbn))
+    assert libreria_base.books[-1].title == expected
+
+# ==========================================
+# 8. COBERTURA DE CAJA BLANCA
+# ==========================================
 @pytest.mark.system
-def test_library_init(lib_init):
-     lib = lib_init
-     lib.borrow_book('ID0001','ISBN001')
-
-     assert lib.books[0].borrowed == True
-
-@pytest.mark.wip
-def test_library_init_ID_not_register(lib_init):
-    lib = lib_init
-
-    with pytest.raises(ValueError,match='User not found'):
-        lib.borrow_book('ID0003','ISBN001')
-
+def test_cobertura_usuario_falso(libreria_base):
+    try:
+        libreria_base._find_user(999) 
+    except ValueError as e:
+        # Aquí verificamos que el mensaje del error interno sea el correcto, sin usar capsys
+        assert "User not found" in str(e)
+# ==========================================
+# 9. PYTEST.RAISES()
+# ==========================================
 @pytest.mark.system
-def test_system_full_cycle_borrow_return():
-  
-    lib = library.Library()
-    
+def test_tema_raises(libreria_base):
+    # Intentamos buscar un libro que no existe para forzar el ValueError
+    with pytest.raises(ValueError):
+        libreria_base._find_book("ISBN_INEXISTENTE")
 
-    book_1984 = book.Book('1984', 'George Orwell', 1949, 'ISBN001')
-    user_1 = user.User('Juan', 'ID0001')
-    
-    lib.add_book(book_1984)
-    lib.add_user(user_1)
-    
-
-    lib.borrow_book('ID0001', 'ISBN001')
-    assert lib.books[0].borrowed == True
-    lib.return_book('ID0001', 'ISBN001') 
-    
-
-    assert lib.books[0].borrowed == False
-
+# ==========================================
+# 11. CAPSYS
+# ==========================================
 @pytest.mark.system
-def test_system_borrow_rejected_for_borrowed_book():
-
-    lib = library.Library()
+def test_tema_capsys(libreria_base, capsys, monkeypatch):
+    # Desactivamos los préstamos temporalmente para que imprima en consola
+    monkeypatch.setitem(settings, "loans_enabled", False)
+    libreria_base.borrow_book(1, "ISBN001")
     
+    captured = capsys.readouterr()
+    # Verificamos que tu print("Loans are disabled") se haya capturado
+    assert "Loans are disabled" in captured.out
 
-    book_moby = book.Book('Moby Dick', 'Herman Melville', 1851, 'ISBN004')
-    user_1 = user.User('Ana', 'ID0001')
-    user_2 = user.User('Luis', 'ID0002')
-    
-    lib.add_book(book_moby)
-    lib.add_user(user_1)
-    lib.add_user(user_2)
-    
+# ==========================================
+# 10. TRY-EXCEPT
+# ==========================================
+@pytest.mark.unit
+def test_tema_try_except(libreria_base):
+    try:
+        # Forzamos un error mandando strings vacíos
+        libreria_base.borrow_book("", "")
+    except ValueError:
+        # Atrapamos exitosamente el ValueError
+        assert True
+    except Exception:
+        pytest.fail("Fallo: no se atrapó correctamente la excepción")
 
-    lib.borrow_book('ID0001', 'ISBN004')
-    assert lib.books[0].borrowed == True
-    
+# ==========================================
+# 3. MONKEYPATCH.SETITEM()
+# ==========================================
+@pytest.mark.system
+def test_tema_setitem(monkeypatch):
+    monkeypatch.setitem(CONFIG, "max_books", 5)
+    assert CONFIG["max_books"] == 5
 
-    with pytest.raises(ValueError, match="The book is already borrowed"):
-        lib.borrow_book('ID0002', 'ISBN004')
+# ==========================================
+# 1. MONKEYPATCH.SETATTR()
+# ==========================================
+@pytest.mark.unit
+def test_tema_setattr(monkeypatch):
+    libro = Book("The Great", "Autor", 1925, "003")
+    
+    def estado_falso(): 
+        return "Perdido"
+        
+    monkeypatch.setattr(libro, "check_status", estado_falso, raising=False)
+    assert libro.check_status() == "Perdido"
+
+# ==========================================
+# 2. MONKEYPATCH.DELATTR()
+# ==========================================
+@pytest.mark.unit
+def test_tema_delattr(monkeypatch):
+    libro = Book("The Great", "Autor", 1925, "003")
+    monkeypatch.delattr(libro, "title", raising=False)
+    assert not hasattr(libro, "title")

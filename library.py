@@ -1,5 +1,7 @@
 from book import Book
 from user import User
+CONFIG = {"max_books": 3}
+
 settings = {
     "loans_enabled": True
 }
